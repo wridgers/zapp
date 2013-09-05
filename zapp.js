@@ -56,9 +56,11 @@ function middleware(req, res, next) {
   // get path
   var path = serv + '/' + req.path;
 
+  console.log('GET ' + req.path);
+
   // get info on path
   fs.stat(path, function(err, stats) {
-    if (err)
+    if (err || stats == undefined)
       res.send(404);
 
     // stats
