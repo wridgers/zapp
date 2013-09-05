@@ -1,2 +1,19 @@
+<<<<<<< HEAD
 *.swp
 node_modules
+=======
+lib-cov
+*.seed
+*.log
+*.csv
+*.dat
+*.out
+*.pid
+*.gz
+
+pids
+logs
+results
+
+npm-debug.log
+>>>>>>> c4370b1bdcd7fdaed94b0c398e9baee8bf30273a
