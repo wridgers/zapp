@@ -60,34 +60,39 @@ function middleware(req, res, next) {
 
   // get info on path
   fs.stat(path, function(err, stats) {
-    if (err || stats == undefined)
+    if (err || stats == undefined) {
       res.send(404);
-
-    // stats
-    var isFile      = stats.isFile();
-    var isDirectory = stats.isDirectory();
-
-    if (isFile || isDirectory) {
-      if (isDirectory)
-        path += '/index.html';
-
-      fs.readFile(path, { encoding: 'utf-8' }, function(err, data) {
-        if (err)
-          res.send(404);
-
-        var index = path.lastIndexOf('.');
-        var ext   = (index < 0) ? '' : path.substr(index);          
-
-        if (ext == '.html') {
-          data = data.replace('<\/head>', headerPayload + '\n</head>');
-          data = data.replace('<\/body>', footerPayload + '\n</body>');
-        }
-
-        res.set('Content-Type', mime.lookup(path));
-        res.send(data);
-      });
     } else {
-      res.send(404);
+      // stats
+      var isFile      = stats.isFile();
+      var isDirectory = stats.isDirectory();
+
+      if (isFile || isDirectory) {
+        // TODO: try index.htm, index.jade, index.ejs, etc
+        if (isDirectory)
+          path += '/index.html';
+
+        fs.readFile(path, { encoding: 'utf-8' }, function(err, data) {
+          if (err || data == undefined) {
+            res.send(404);
+          } else {
+            // get the extension
+            var index = path.lastIndexOf('.');
+            var ext   = (index < 0) ? '' : path.substr(index);          
+
+            // inject our scripts
+            if (ext == '.html') {
+              data = data.replace('<\/head>', headerPayload + '\n</head>');
+              data = data.replace('<\/body>', footerPayload + '\n</body>');
+            }
+
+            res.set('Content-Type', mime.lookup(path));
+            res.send(data);
+          }
+        });
+      } else {
+        res.send(404);
+      }
     }
   });
 }
