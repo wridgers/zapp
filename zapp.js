@@ -1,3 +1,7 @@
+#!/usr/bin/env node
+
+"use strict";
+
 // libs
 var express  = require('express');
 var chokidar = require('chokidar');
@@ -13,10 +17,10 @@ var footerPayload = '<script>var sockjs=new SockJS("/socket");sockjs.onmessage=f
 
 // config
 var port = 80;
-var serv = __dirname;
+var serv = process.cwd();
 
 // setup watcher
-var watcher = chokidar.watch(__dirname);
+var watcher = chokidar.watch(serv);
 
 // setup socket
 var socket = sockjs.createServer();
