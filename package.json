@@ -33,10 +33,11 @@
   "licenses": [
     {
       "type": "MIT",
-      "url": "
-
+      "url": "https://raw.github.com/wridgers/zapp/master/LICENSE"
     }
-  ]
+  ],
+  
+  "main": "./zapp",
 
   "dependencies": {
     "express": "3.x",
