@@ -1,6 +1,6 @@
 {
   "name": "zapp",
-  "version": "0.0.4",
+  "version": "0.0.5",
 
   "author": {
     "name": "Will Ridgers",
@@ -43,6 +43,7 @@
     "express": "3.x",
     "chokidar": "~0.6.3",
     "sockjs": "~0.3.7",
-    "mime": "~1.2.11"
+    "mime": "~1.2.11",
+    "optimist": "~0.6.0"
   }
 }
