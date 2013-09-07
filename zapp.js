@@ -12,6 +12,14 @@ var express  = require('express');
 var mime     = require('mime');
 var sockjs   = require('sockjs');
 
+// templating and stuff
+var ejs      = require('ejs');
+var hbs      = require('handlebars');
+var jade     = require('jade');
+var less     = require('less');
+var markdown = require('markdown').markdown;
+var stylus   = require('stylus');
+
 // arguments
 var argv     = require('optimist')
                 .usage('Usage: $0 -p [port]')
@@ -26,6 +34,16 @@ var footerPayload = '<script>var sockjs=new SockJS("/socket");sockjs.onmessage=f
 // config
 var port = argv.p;
 var serv = process.cwd();
+
+// index files
+var index = [
+  'index.html',
+  'index.htm',
+  'index.jade',
+  'index.ejs',
+  'index.hbs',
+  'index.md'
+];
 
 // setup watcher
 var watcher = chokidar.watch(serv);
@@ -59,50 +77,124 @@ var server = http.createServer(app);
 // bind sockjs
 socket.installHandlers(server, { prefix: '/socket' });
 
+// injection function
+function inject(data) {
+  data = data.replace('<\/head>', headerPayload + '\n</head>');
+  data = data.replace('<\/body>', footerPayload + '\n</body>');
+
+  return data;
+}
+
+// serve a file or return false
+function serveFile(path, req, res) {
+  // get info on path
+  fs.readFile(path, { encoding: 'utf-8' }, function(err, data) {
+    if (err || data == undefined) {
+      res.send(500);
+    } else {
+      // get the extension
+      var index = path.lastIndexOf('.');
+      var ext   = (index < 0) ? '' : path.substr(index);          
+
+      // get mimetype
+      var mimetype = mime.lookup(path);
+
+      switch(ext) {
+        case '.ejs':
+          mimetype = 'text/html';
+          data = ejs.render(data);
+
+          sendFile(data, mimetype, res);
+          break;
+  
+        case '.hbs':
+          mimetype = 'text/html';
+          var template = hbs.compile(data);
+          var html = template();
+
+          sendFile(html, mimetype, res);
+          break;
+
+        case '.jade':
+          mimetype = 'text/html';
+          data = jade.render(data);
+
+          sendFile(data, mimetype, res);
+          break;
+
+        case '.md':
+          mimetype = 'text/html';
+          data = markdown.toHTML(data);
+          data = jade.renderFile(__dirname + '/markdown.jade', {rendered: data});
+
+          sendFile(data, mimetype, res);
+          break;
+
+        case '.less':
+          mimetype = 'text/css';
+          less.render(data, function(err, css) {
+            if (err) 
+              res.send(500);
+            else 
+              sendFile(css, mimetype, res);
+          });
+
+          break;
+
+        case '.styl':
+          mimetype = 'text/css';
+          stylus.render(data, function(err, css) {
+            if (err) 
+              res.send(500);
+            else 
+              sendFile(css, mimetype, res);
+          });
+
+          break;
+
+        default:
+          sendFile(data, mimetype, res);
+          break;
+      }
+    }
+  });
+}
+
+function sendFile(data, mimetype, res) {
+  res.set('Content-Type', mimetype);
+  res.send(
+    (mimetype == 'text/html') ? inject(data) : data
+  );
+}
+
 // serve files
 function middleware(req, res, next) {
   // get path
   var path = serv + '/' + req.path;
+  console.log(req.method + ' ' + req.path);
 
-  console.log('GET ' + req.path);
-
-  // get info on path
   fs.stat(path, function(err, stats) {
-    if (err || stats == undefined) {
+    if (err || !stats || stats == undefined) {
+      console.log('error');
       res.send(404);
     } else {
-      // stats
-      var isFile      = stats.isFile();
-      var isDirectory = stats.isDirectory();
+      if (stats.isFile()) {
+        serveFile(path, req, res);
+      } else {
+        var served = false;
 
-      if (isFile || isDirectory) {
-        // TODO: try index.htm, index.jade, index.ejs, etc
-        if (isDirectory)
-          path += '/index.html';
+        // a bit messy?
+        index.forEach(function(file) {
+          var newPath = path + '/' + file;
 
-        fs.readFile(path, { encoding: 'utf-8' }, function(err, data) {
-          if (err || data == undefined) {
-            res.send(404);
-          } else {
-            // get the extension
-            var index = path.lastIndexOf('.');
-            var ext   = (index < 0) ? '' : path.substr(index);          
-
-            // it'd be nice if we could compile ejs/jade/stylus/sass/markdown here
-
-            // inject our scripts
-            if (ext == '.html') {
-              data = data.replace('<\/head>', headerPayload + '\n</head>');
-              data = data.replace('<\/body>', footerPayload + '\n</body>');
-            }
-
-            // serve the file with correct mime type
-            res.set('Content-Type', mime.lookup(path));
-            res.send(data);
+          if (fs.existsSync(newPath) && !served) {
+            serveFile(newPath, req, res);
+            served = true;
           }
         });
-      } else {
-        res.send(404);
+
+        if (!served)
+          res.send(404);
       }
     }
   });

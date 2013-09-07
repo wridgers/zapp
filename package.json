@@ -1,6 +1,6 @@
 {
   "name": "zapp",
-  "version": "0.0.5",
+  "version": "0.1.0",
 
   "author": {
     "name": "Will Ridgers",
@@ -16,7 +16,7 @@
     "url": "http://github.com/wridgers/zapp.git"
   },
 
-  "description": "express powered http server with live reloading",
+  "description": "http server with live reloading, templates, markdown, and scss",
   "keywords": [
     "monitor",
     "development",
@@ -44,6 +44,15 @@
     "chokidar": "~0.6.3",
     "sockjs": "~0.3.7",
     "mime": "~1.2.11",
-    "optimist": "~0.6.0"
+    "optimist": "~0.6.0",
+
+    "ejs": "~0.8.4",
+    "handlebars": "~1.0.12",
+    "jade": "~0.35.0",
+
+    "less": "~1.5.0",
+    "stylus": "~0.37.0",
+
+    "markdown": "~0.5.0"
   }
 }
