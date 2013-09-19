@@ -26,7 +26,6 @@ var argv     = require('optimist')
                 .default('p', 8080)
                 .argv;
 
-
 // payloads
 var headerPayload = '<script src="http://cdn.sockjs.org/sockjs-0.3.min.js"></script>';
 var footerPayload = '<script>var sockjs=new SockJS("/socket");sockjs.onmessage=function(e){location.reload();};</script>';
@@ -77,94 +76,119 @@ var server = http.createServer(app);
 // bind sockjs
 socket.installHandlers(server, { prefix: '/socket' });
 
-// injection function
+// serve a file or return false
+function serveFile(path, req, res) {
+  // get the extension
+  var index = path.lastIndexOf('.');
+  var ext   = (index < 0) ? '' : path.substr(index);          
+
+  // do something based on the extension
+  switch (ext) {
+    // eJS
+    case '.ejs':
+      readFile(path, res, function(data, mimetype) {
+        var data = ejs.render(data);
+
+        sendData(data, 'text/html', res);
+      });
+      break;
+
+    // handlebars
+    case '.hbs':
+      readFile(path, res, function(data, mimetype) {
+        var template = hbs.compile(data);
+        var html = template();
+
+        sendData(html, 'text/html', res);
+      });
+      break;
+
+    // jade
+    case '.jade':
+      var data = jade.renderFile(path, {
+        pretty: true
+      });
+
+      sendData(data, 'text/html', res);
+      break;
+
+    // markdown
+    case '.md':
+      readFile(path, res, function(data, mimetype) {
+        data = markdown.toHTML(data);
+        data = jade.renderFile(__dirname + '/markdown.jade', {rendered: data});
+
+        sendData(data, 'text/html', res);
+      });
+      break;
+
+    // less
+    case '.less':
+      readFile(path, res, function(data, mimetype) {
+        less.render(data, function(err, css) {
+          if (err) 
+            res.send(500);
+          else 
+            sendData(css, 'text/css', res);
+        });
+      });
+
+      break;
+
+    // stylus
+    case '.styl':
+      readFile(path, res, function(data, mimetype) {
+        stylus.render(data, function(err, css) {
+          if (err) 
+            res.send(500);
+          else 
+            sendData(css, 'text/css', res);
+        });
+      });
+
+      break;
+
+    default:
+      // send whatever we can read
+      readFile(path, res, function(data, mimetype) {
+        sendData(data, mimetype, res);
+      });
+      break;
+  }
+}
+
+// read a file, respond 500 on failure, otherwise execute a callback
+function readFile(path, res, callback) {
+  fs.readFile(path, { encoding: 'utf-8' }, function(err, data) {
+    if (err || data == undefined) {
+      res.send(500);
+    } else {
+      // get mimetype
+      var mimetype = mime.lookup(path);
+
+      // hand back read data 
+      callback(data, mimetype);
+    }
+  });
+}
+
+// respond with some data
+function sendData(data, mimetype, res) {
+  // set important header
+  res.set('Content-Type', mimetype);
+
+  // send response, inject sockjs if it's html
+  res.send(
+    (mimetype == 'text/html') ? inject(data) : data
+  );
+}
+
+// injection sockjs into html
 function inject(data) {
   data = data.replace('<\/head>', headerPayload + '\n</head>');
   data = data.replace('<\/body>', footerPayload + '\n</body>');
 
   return data;
-}
-
-// serve a file or return false
-function serveFile(path, req, res) {
-  // get info on path
-  fs.readFile(path, { encoding: 'utf-8' }, function(err, data) {
-    if (err || data == undefined) {
-      res.send(500);
-    } else {
-      // get the extension
-      var index = path.lastIndexOf('.');
-      var ext   = (index < 0) ? '' : path.substr(index);          
-
-      // get mimetype
-      var mimetype = mime.lookup(path);
-
-      switch(ext) {
-        case '.ejs':
-          mimetype = 'text/html';
-          data = ejs.render(data);
-
-          sendFile(data, mimetype, res);
-          break;
-  
-        case '.hbs':
-          mimetype = 'text/html';
-          var template = hbs.compile(data);
-          var html = template();
-
-          sendFile(html, mimetype, res);
-          break;
-
-        case '.jade':
-          mimetype = 'text/html';
-          data = jade.render(data);
-
-          sendFile(data, mimetype, res);
-          break;
-
-        case '.md':
-          mimetype = 'text/html';
-          data = markdown.toHTML(data);
-          data = jade.renderFile(__dirname + '/markdown.jade', {rendered: data});
-
-          sendFile(data, mimetype, res);
-          break;
-
-        case '.less':
-          mimetype = 'text/css';
-          less.render(data, function(err, css) {
-            if (err) 
-              res.send(500);
-            else 
-              sendFile(css, mimetype, res);
-          });
-
-          break;
-
-        case '.styl':
-          mimetype = 'text/css';
-          stylus.render(data, function(err, css) {
-            if (err) 
-              res.send(500);
-            else 
-              sendFile(css, mimetype, res);
-          });
-
-          break;
-
-        default:
-          sendFile(data, mimetype, res);
-          break;
-      }
-    }
-  });
-}
-
-function sendFile(data, mimetype, res) {
-  res.set('Content-Type', mimetype);
-  res.send(
-    (mimetype == 'text/html') ? inject(data) : data
-  );
 }
 
 // serve files
@@ -175,7 +199,6 @@ function middleware(req, res, next) {
 
   fs.stat(path, function(err, stats) {
     if (err || !stats || stats == undefined) {
-      console.log('error');
       res.send(404);
     } else {
       if (stats.isFile()) {
