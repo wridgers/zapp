@@ -16,9 +16,17 @@ var sockjs   = require('sockjs');
 var ejs      = require('ejs');
 var hbs      = require('handlebars');
 var jade     = require('jade');
+
+// css
 var less     = require('less');
-var markdown = require('markdown').markdown;
 var stylus   = require('stylus');
+
+// javascript/coffeescript
+var Snockets = require('snockets');
+var snockets = new Snockets();
+
+// misc
+var markdown = require('markdown').markdown;
 
 // arguments
 var argv     = require('optimist')
@@ -33,6 +41,7 @@ var footerPayload = '<script>var sockjs=new SockJS("/socket");sockjs.onmessage=f
 // config
 var port = argv.p;
 var serv = process.cwd();
+var ugly = false;
 
 // index files
 var index = [
@@ -45,27 +54,17 @@ var index = [
 ];
 
 // setup watcher
-var watcher = chokidar.watch(serv);
+var watcher = chokidar.watch(serv, {
+  persistent: true
+});
 
 // setup socket
 var socket = sockjs.createServer();
 socket.on('connection', function(conn) {
-  // on add
-  watcher.on('add', function(path) {
-    console.log('[*] add detected: ' + path);
+  // on add/change/unlink
+  watcher.on('all', function(path) {
     conn.write('refresh');
-  });
-
-  // on change
-  watcher.on('change', function(path) {
-    console.log('[*] changed detected: ' + path);
-    conn.write('refresh');
-  });
-
-  // on delete
-  watcher.on('unlink', function(path) {
-    console.log('[*] unlink detected: ' + path);
-    conn.write('refresh');
+    watcher.close();
   });
 });
 
@@ -106,7 +105,7 @@ function serveFile(path, req, res) {
     // jade
     case '.jade':
       var data = jade.renderFile(path, {
-        pretty: true
+        pretty: !ugly
       });
 
       sendData(data, 'text/html', res);
@@ -144,6 +143,32 @@ function serveFile(path, req, res) {
           else 
             sendData(css, 'text/css', res);
         });
+      });
+
+      break;
+
+    // javascript
+    case '.js':
+      snockets.getConcatenation(path, {
+        minify: ugly
+      }, function(err, js) {
+        if (err || !js)
+          res.send(500);
+        else
+          sendData(js, 'text/javascript', res);
+      });
+
+      break;
+
+    // coffeescript
+    case '.coffee':
+      snockets.getConcatenation(path, {
+        minify: ugly
+      }, function(err, js) {
+        if (err || !js)
+          res.send(500);
+        else
+          sendData(js, 'text/javascript', res);
       });
 
       break;
