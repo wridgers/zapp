@@ -35,7 +35,7 @@ var argv     = require('optimist')
                 .argv;
 
 // payloads
-var headerPayload = '<script src="http://cdn.sockjs.org/sockjs-0.3.min.js"></script>';
+var headerPayload = '<script src="/res/sockjs"></script>';
 var footerPayload = '<script>var sockjs=new SockJS("/socket");sockjs.onmessage=function(e){location.reload();};</script>';
 
 // config
@@ -112,7 +112,7 @@ function serveFile(path, req, res) {
     case '.md':
       readFile(path, res, function(data, mimetype) {
         data = markdown.toHTML(data);
-        data = jade.renderFile(__dirname + '/markdown.jade', {rendered: data});
+        data = jade.renderFile(__dirname + '/res/markdown.jade', {rendered: data});
 
         sendData(data, 'text/html', res);
       });
@@ -213,36 +213,53 @@ function inject(data) {
   return data;
 }
 
+// serve a resource
+function resource(resource, res) {
+  readFile(__dirname + '/res/' + resource, res, function(data, mimetype) {
+    sendData(data, mimetype, res);
+  });
+}
+
 // serve files
 function middleware(req, res, next) {
   // get path
   var path = serv + '/' + req.path;
   console.log(req.method + ' ' + req.path);
 
-  fs.stat(path, function(err, stats) {
-    if (err || !stats || stats == undefined) {
-      res.send(404);
-    } else {
-      if (stats.isFile()) {
-        serveFile(path, req, res);
-      } else {
-        var served = false;
+  switch(req.path) {
+    case '/res/sockjs':
+      resource('sockjs.js', res);
+      break;
 
-        // a bit messy?
-        index.forEach(function(file) {
-          var newPath = path + '/' + file;
-
-          if (fs.existsSync(newPath) && !served) {
-            serveFile(newPath, req, res);
-            served = true;
-          }
-        });
-
-        if (!served)
+    default:
+      fs.stat(path, function(err, stats) {
+        if (err || !stats || stats == undefined) {
           res.send(404);
-      }
-    }
-  });
+        } else {
+          if (stats.isFile()) {
+            serveFile(path, req, res);
+          } else {
+            var served = false;
+
+            // a bit messy?
+            index.forEach(function(file) {
+              var newPath = path + '/' + file;
+
+              if (fs.existsSync(newPath) && !served) {
+                serveFile(newPath, req, res);
+                served = true;
+              }
+            });
+
+            if (!served)
+              res.send(404);
+          }
+        }
+      });
+      
+      break;
+  }
+
 }
 
 // middleware
