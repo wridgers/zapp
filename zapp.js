@@ -54,9 +54,7 @@ var index = [
 ];
 
 // setup watcher
-var watcher = chokidar.watch(serv, {
-  persistent: true
-});
+var watcher = chokidar.watch(serv);
 
 // setup socket
 var socket = sockjs.createServer();
@@ -64,7 +62,6 @@ socket.on('connection', function(conn) {
   // on add/change/unlink
   watcher.on('all', function(path) {
     conn.write('refresh');
-    watcher.close();
   });
 });
 
