@@ -35,8 +35,8 @@ var argv     = require('optimist')
                 .argv;
 
 // payloads
-var headerPayload = '<script src="/res/sockjs"></script>';
-var footerPayload = '<script>var sockjs=new SockJS("/socket");sockjs.onmessage=function(e){location.reload();};</script>';
+var sockLibPayload = '<script src="/sockjs/lib"></script>';
+var sockSrcPayload = '<script src="/sockjs/src"></script>';
 
 // config
 var port = argv.p;
@@ -207,8 +207,8 @@ function sendData(data, mimetype, res) {
 
 // injection sockjs into html
 function inject(data) {
-  data = data.replace('<\/head>', headerPayload + '\n</head>');
-  data = data.replace('<\/body>', footerPayload + '\n</body>');
+  data = data.replace('<\/head>', sockLibPayload + '\n  </head>');
+  data = data.replace('<\/body>', sockSrcPayload + '\n  </body>');
 
   return data;
 }
@@ -227,8 +227,11 @@ function middleware(req, res, next) {
   console.log(req.method + ' ' + req.path);
 
   switch(req.path) {
-    case '/res/sockjs':
-      resource('sockjs.js', res);
+    case '/sockjs/lib':
+      resource('socklib.js', res);
+      break;
+    case '/sockjs/src':
+      resource('socksrc.js', res);
       break;
 
     default:
