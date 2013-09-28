@@ -30,8 +30,10 @@ var markdown = require('markdown').markdown;
 
 // arguments
 var argv     = require('optimist')
-                .usage('Usage: $0 -p [port]')
+                .usage('Usage: $0')
+                .alias('p', 'port')
                 .default('p', 8080)
+                .describe('p', 'Set port to use')
                 .argv;
 
 // payloads
@@ -76,7 +78,16 @@ socket.installHandlers(server, { prefix: '/socket' });
 function serveFile(path, req, res) {
   // get the extension
   var index = path.lastIndexOf('.');
-  var ext   = (index < 0) ? '' : path.substr(index);          
+  var ext   = (index < 0) ? '' : path.substr(index).toLowerCase();          
+
+  // unify common exts
+  switch(ext) {
+    case '.coffee':
+      ext = '.js';
+
+    case '.markdown':
+      ext = '.md';
+  }
 
   // do something based on the extension
   switch (ext) {
@@ -144,21 +155,8 @@ function serveFile(path, req, res) {
 
       break;
 
-    // javascript
+    // javascript (and coffeescript)
     case '.js':
-      snockets.getConcatenation(path, {
-        minify: ugly
-      }, function(err, js) {
-        if (err || !js)
-          res.send(500);
-        else
-          sendData(js, 'text/javascript', res);
-      });
-
-      break;
-
-    // coffeescript
-    case '.coffee':
       snockets.getConcatenation(path, {
         minify: ugly
       }, function(err, js) {
@@ -207,8 +205,8 @@ function sendData(data, mimetype, res) {
 
 // injection sockjs into html
 function inject(data) {
-  data = data.replace('<\/head>', sockLibPayload + '\n  </head>');
-  data = data.replace('<\/body>', sockSrcPayload + '\n  </body>');
+  data = data.replace('<\/head>', '  ' + sockLibPayload + '\n  </head>');
+  data = data.replace('<\/body>', '  ' + sockSrcPayload + '\n  </body>');
 
   return data;
 }
