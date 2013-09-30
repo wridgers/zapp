@@ -7,4 +7,6 @@
   - .zappignore
   - jslint -> console.error via sockets
   - bower scripts
-  - 'build' method
+  - 'build' method, output static files
+  - textile support
+
