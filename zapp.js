@@ -78,15 +78,17 @@ socket.installHandlers(server, { prefix: '/socket' });
 function serveFile(path, req, res) {
   // get the extension
   var index = path.lastIndexOf('.');
-  var ext   = (index < 0) ? '' : path.substr(index).toLowerCase();          
+  var ext   = (index < 0) ? '' : path.substr(index).toLowerCase();
 
   // unify common exts
   switch(ext) {
     case '.coffee':
       ext = '.js';
+      break;
 
     case '.markdown':
       ext = '.md';
+      break;
   }
 
   // do something based on the extension
@@ -94,7 +96,7 @@ function serveFile(path, req, res) {
     // eJS
     case '.ejs':
       readFile(path, res, function(data, mimetype) {
-        var data = ejs.render(data);
+        data = ejs.render(data);
 
         sendData(data, 'text/html', res);
       });
@@ -133,9 +135,9 @@ function serveFile(path, req, res) {
     case '.less':
       readFile(path, res, function(data, mimetype) {
         less.render(data, function(err, css) {
-          if (err) 
+          if (err)
             res.send(500);
-          else 
+          else
             sendData(css, 'text/css', res);
         });
       });
@@ -146,9 +148,9 @@ function serveFile(path, req, res) {
     case '.styl':
       readFile(path, res, function(data, mimetype) {
         stylus.render(data, function(err, css) {
-          if (err) 
+          if (err)
             res.send(500);
-          else 
+          else
             sendData(css, 'text/css', res);
         });
       });
@@ -180,13 +182,13 @@ function serveFile(path, req, res) {
 // read a file, respond 500 on failure, otherwise execute a callback
 function readFile(path, res, callback) {
   fs.readFile(path, { encoding: 'utf-8' }, function(err, data) {
-    if (err || data == undefined) {
+    if (err || data === undefined) {
       res.send(500);
     } else {
       // get mimetype
       var mimetype = mime.lookup(path);
 
-      // hand back read data 
+      // hand back read data
       callback(data, mimetype);
     }
   });
@@ -212,8 +214,8 @@ function inject(data) {
 }
 
 // serve a resource
-function resource(resource, res) {
-  readFile(__dirname + '/res/' + resource, res, function(data, mimetype) {
+function resource(file, res) {
+  readFile(__dirname + '/res/' + file, res, function(data, mimetype) {
     sendData(data, mimetype, res);
   });
 }
@@ -257,7 +259,7 @@ function middleware(req, res, next) {
           }
         }
       });
-      
+
       break;
   }
 
@@ -268,4 +270,4 @@ app.use(middleware);
 
 // start server
 server.listen(port);
-console.log('listening on port ' + port)
+console.log('listening on port ' + port);
