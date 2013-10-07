@@ -1,6 +1,6 @@
 {
   "name": "zapp",
-  "version": "0.1.5",
+  "version": "0.1.6",
 
   "author": {
     "name": "Will Ridgers",
@@ -36,7 +36,7 @@
       "url": "https://raw.github.com/wridgers/zapp/master/LICENSE"
     }
   ],
-  
+
   "main": "./zapp",
 
   "dependencies": {
