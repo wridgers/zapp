@@ -56,13 +56,14 @@ var index = [
 ];
 
 // setup watcher
-var watcher = chokidar.watch(serv, {ignored: /^\./});
+var watcher = chokidar.watch(serv, {ignored: /\.swp/});
 
 // setup socket
 var socket = sockjs.createServer();
 socket.on('connection', function(conn) {
   // on add/change/unlink
-  watcher.on('all', function(path) {
+  watcher.on('all', function(type, path) {
+    // TODO: check if path should be ignored
     conn.write('refresh');
   });
 });
@@ -214,7 +215,7 @@ function inject(data) {
 }
 
 // serve a resource
-function resource(file, res) {
+function zappResource(file, res) {
   readFile(__dirname + '/res/' + file, res, function(data, mimetype) {
     sendData(data, mimetype, res);
   });
@@ -228,15 +229,15 @@ function middleware(req, res, next) {
 
   switch(req.path) {
     case '/sockjs/lib':
-      resource('socklib.js', res);
+      zappResource('socklib.js', res);
       break;
     case '/sockjs/src':
-      resource('socksrc.js', res);
+      zappResource('socksrc.js', res);
       break;
 
     default:
       fs.stat(path, function(err, stats) {
-        if (err || !stats || stats == undefined) {
+        if (err || !stats || stats === undefined) {
           res.send(404);
         } else {
           if (stats.isFile()) {
