@@ -56,7 +56,7 @@ var index = [
 ];
 
 // setup watcher
-var watcher = chokidar.watch(serv, {ignored: /\.swp/});
+var watcher = chokidar.watch(serv, {ignored: /\\\./});
 
 // setup socket
 var socket = sockjs.createServer();
@@ -78,7 +78,7 @@ socket.installHandlers(server, { prefix: '/socket' });
 // serve a file or return false
 function serveFile(path, req, res) {
   // get the extension
-  var index = path.lastIndexOf('.');
+  var index = path.lastIndexOf('.')
   var ext   = (index < 0) ? '' : path.substr(index).toLowerCase();
 
   // unify common exts
@@ -171,6 +171,26 @@ function serveFile(path, req, res) {
 
       break;
 
+    case '.bmp':
+      res.set('Content-Type', 'image/bmp');
+      res.sendFile(path);
+      break;
+
+    case '.jpg':
+      res.set('Content-Type', 'image/jpg');
+      res.sendFile(path);
+      break;
+
+    case '.gif':
+      res.set('Content-Type', 'image/gif');
+      res.sendFile(path);
+      break;
+
+    case '.png':
+      res.set('Content-Type', 'image/png');
+      res.sendfile(path);
+      break;
+
     default:
       // send whatever we can read
       readFile(path, res, function(data, mimetype) {
@@ -239,7 +259,7 @@ function middleware(req, res, next) {
       fs.stat(path, function(err, stats) {
         if (err || !stats || stats === undefined) {
           res.send(404);
-        } else {
+        } else {app.use(express.static(__dirname + '/public'));
           if (stats.isFile()) {
             serveFile(path, req, res);
           } else {
@@ -271,4 +291,5 @@ app.use(middleware);
 
 // start server
 server.listen(port);
-console.log('listening on port ' + port);
+console.log('[zapp] listening on port ' + port);
+
