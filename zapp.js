@@ -56,7 +56,7 @@ var index = [
 ];
 
 // setup watcher
-var watcher = chokidar.watch(serv, {ignored: /\\\./});
+var watcher = chokidar.watch(serv, {ignored: /\.swp/});
 
 // setup socket
 var socket = sockjs.createServer();
