@@ -13,8 +13,6 @@ var mime     = require('mime');
 var sockjs   = require('sockjs');
 
 // templating and stuff
-var ejs      = require('ejs');
-var hbs      = require('handlebars');
 var jade     = require('jade');
 
 // css
@@ -50,8 +48,6 @@ var index = [
   'index.html',
   'index.htm',
   'index.jade',
-  'index.ejs',
-  'index.hbs',
   'index.md'
 ];
 
@@ -60,11 +56,28 @@ var watcher = chokidar.watch(serv, {ignored: /\.swp/});
 
 // setup socket
 var socket = sockjs.createServer();
-socket.on('connection', function(conn) {
-  // on add/change/unlink
-  watcher.on('all', function(type, path) {
-    // TODO: check if path should be ignored
-    conn.write('refresh');
+
+// stack of connections
+var connections = [];
+
+// add a client to the stack when they connect
+socket.on('connection', function(connection) {
+  connections.push(connection);
+
+  // relay message to the other clients
+  connection.on('data', function(message) {
+    connections.forEach(function(conn) {
+      if (connection != conn) {
+        conn.write(message);
+      }
+    });
+  });
+});
+
+// on add/change/unlink
+watcher.on('all', function(type, path) {
+  connections.forEach(function(conn) {
+    conn.close();
   });
 });
 
@@ -94,25 +107,6 @@ function serveFile(path, req, res) {
 
   // do something based on the extension
   switch (ext) {
-    // eJS
-    case '.ejs':
-      readFile(path, res, function(data, mimetype) {
-        data = ejs.render(data);
-
-        sendData(data, 'text/html', res);
-      });
-      break;
-
-    // handlebars
-    case '.hbs':
-      readFile(path, res, function(data, mimetype) {
-        var template = hbs.compile(data);
-        var html = template();
-
-        sendData(html, 'text/html', res);
-      });
-      break;
-
     // jade
     case '.jade':
       var data = jade.renderFile(path, {
