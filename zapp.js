@@ -173,21 +173,26 @@ function serveFile(path, req, res) {
 
     case '.bmp':
       res.set('Content-Type', 'image/bmp');
-      res.sendFile(path);
+      res.sendfile(path);
       break;
 
     case '.jpg':
       res.set('Content-Type', 'image/jpg');
-      res.sendFile(path);
+      res.sendfile(path);
       break;
 
     case '.gif':
       res.set('Content-Type', 'image/gif');
-      res.sendFile(path);
+      res.sendfile(path);
       break;
 
     case '.png':
       res.set('Content-Type', 'image/png');
+      res.sendfile(path);
+      break;
+
+    case '.otf':
+      res.set('Content-Type', 'font/opentype');
       res.sendfile(path);
       break;
 
