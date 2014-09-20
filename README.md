@@ -1,7 +1,7 @@
 # zapp
 Simple http server with websocket powered live reloading.
 
-![](http://zapp.wor.io/zapp.png)
+![](https://raw.githubusercontent.com/wridgers/zapp/master/example/img/zapp.png)
 
 ## Usage
 
