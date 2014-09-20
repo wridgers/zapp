@@ -29,12 +29,12 @@ var snockets = new Snockets();
 var markdown = require('markdown').markdown;
 
 // arguments
-var argv     = require('optimist')
-                .usage('Usage: $0')
-                .alias('p', 'port')
-                .default('p', 8080)
-                .describe('p', 'Set port to use')
-                .argv;
+var argv = require('optimist')
+  .usage('Usage: $0')
+  .alias('p', 'port')
+  .default('p', 8080)
+  .describe('p', 'Set port to use')
+  .argv;
 
 // payloads
 var sockLibPayload = '<script src="/sockjs/lib"></script>';
@@ -61,9 +61,7 @@ var watcher = chokidar.watch(serv, {ignored: /\.swp/});
 // setup socket
 var socket = sockjs.createServer();
 socket.on('connection', function(conn) {
-  // on add/change/unlink
   watcher.on('all', function(type, path) {
-    // TODO: check if path should be ignored
     conn.write('refresh');
   });
 });
@@ -163,10 +161,11 @@ function serveFile(path, req, res) {
       snockets.getConcatenation(path, {
         minify: ugly
       }, function(err, js) {
-        if (err || !js)
+        if (err) {
           res.send(500);
-        else
+        } else {
           sendData(js, 'text/javascript', res);
+        }
       });
 
       break;
@@ -280,8 +279,9 @@ function middleware(req, res, next) {
               }
             });
 
-            if (!served)
+            if (! served) {
               res.send(404);
+            }
           }
         }
       });
