@@ -2,6 +2,16 @@
 
 "use strict";
 
+var ascii = [
+  '_____________  ______ ______',
+  '\\___   /\\__  \\ \\____ \\\\____ \\',
+  ' /    /  / __ \\|  |_> >  |_> >',
+  '/_____ \\(____  /   __/|   __/',
+  '      \\/     \\/|__|   |__| '
+].join('\n');
+
+console.log(ascii);
+
 // node modules
 var http     = require('http');
 var fs       = require('fs');
