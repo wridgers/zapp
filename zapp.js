@@ -99,8 +99,8 @@ socket.on('connection', function(con) {
 
 // setup watcher
 var watcher = chokidar.watch(serv, {ignored: ignores});
-watcher.on('all', function(type, path, stats) {
-  console.log(type, path);
+watcher.on('all', function(type, path) {
+  var stats = fs.lstatSync(path);
 
   if (! stats.isDirectory()) {
     connections.forEach(function(connection) {
