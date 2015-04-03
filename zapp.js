@@ -48,6 +48,18 @@ var ignores = [
   '**/*.swo'
 ];
 
+var zappignore = serv + '/.zappignore';
+
+if (fs.existsSync(zappignore)) {
+  var contents = fs.readFileSync(zappignore, 'utf8');
+
+  ignores = contents
+    .split('\n')
+    .map(function(line) { return line.trim() })
+    .filter(function(line) { return line[0] != '#'})
+    .filter(function(line) { return line != false});
+}
+
 // index files
 var index = [
   'index.html',

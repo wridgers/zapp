@@ -18,9 +18,15 @@ Start a simple project
 Write a basic template, then serve it with
 
     $ zapp
-  
+
 Direct your browser at [http://localhost:8080/](http://localhost:8080/). Start
 editing index.html.
+
+## zappignore
+
+Zapp will read a `.zappignore` file from the root of the served directory. Each
+line can be a valid [anymatch](https://github.com/es128/anymatch) matcher.
+Comments start with `#`.
 
 ### Note
 
