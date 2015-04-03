@@ -129,10 +129,11 @@ function serveFile(path, req, res) {
     case '.styl':
       readFile(path, res, function(data, mimetype) {
         stylus.render(data, function(err, css) {
-          if (err)
+          if (err) {
             res.send(500);
-          else
+          } else {
             sendData(css, 'text/css', res);
+          }
         });
       });
 
