@@ -51,14 +51,19 @@ var index = [
   'index.md'
 ];
 
-// setup watcher
-var watcher = chokidar.watch(serv, {ignored: /\.swp/});
+var connections = [];
 
 // setup socket
 var socket = sockjs.createServer();
-socket.on('connection', function(conn) {
-  watcher.on('all', function(type, path) {
-    conn.write('refresh');
+socket.on('connection', function(con) {
+  connections.push(con);
+});
+
+// setup watcher
+var watcher = chokidar.watch(serv, {ignored: /\.swp/});
+watcher.on('all', function(type, path) {
+  connections.forEach(function(connection) {
+    connection.write('refresh');
   });
 });
 
