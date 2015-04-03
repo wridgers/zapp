@@ -153,36 +153,17 @@ function serveFile(path, req, res) {
 
       break;
 
-    case '.bmp':
-      res.set('Content-Type', 'image/bmp');
-      res.sendfile(path);
-      break;
-
-    case '.jpg':
-      res.set('Content-Type', 'image/jpg');
-      res.sendfile(path);
-      break;
-
-    case '.gif':
-      res.set('Content-Type', 'image/gif');
-      res.sendfile(path);
-      break;
-
-    case '.png':
-      res.set('Content-Type', 'image/png');
-      res.sendfile(path);
-      break;
-
-    case '.otf':
-      res.set('Content-Type', 'font/opentype');
-      res.sendfile(path);
-      break;
-
     default:
-      // send whatever we can read
-      readFile(path, res, function(data, mimetype) {
-        sendData(data, mimetype, res);
-      });
+      var mimetype = mime.lookup(path);
+
+      if (mimetype == 'text/html') {
+        readFile(path, res, function(data, mimetype) {
+          sendData(data, mimetype, res);
+        });
+      } else {
+        res.set('Content-Type', mimetype);
+        res.sendfile(path);
+      }
       break;
   }
 }
