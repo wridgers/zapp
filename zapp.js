@@ -27,12 +27,12 @@ var snockets = new Snockets();
 var markdown = require('markdown').markdown;
 
 // arguments
-var argv     = require('optimist')
-                .usage('Usage: $0')
-                .alias('p', 'port')
-                .default('p', 8080)
-                .describe('p', 'Set port to use')
-                .argv;
+var argv = require('optimist')
+  .usage('Usage: $0')
+  .alias('p', 'port')
+  .default('p', 8080)
+  .describe('p', 'Set port to use')
+  .argv;
 
 // payloads
 var sockLibPayload = '<script src="/sockjs/lib"></script>';
@@ -51,33 +51,19 @@ var index = [
   'index.md'
 ];
 
-// setup watcher
-var watcher = chokidar.watch(serv, {ignored: /\.swp/});
+var connections = [];
 
 // setup socket
 var socket = sockjs.createServer();
-
-// stack of connections
-var connections = [];
-
-// add a client to the stack when they connect
-socket.on('connection', function(connection) {
-  connections.push(connection);
-
-  // relay message to the other clients
-  connection.on('data', function(message) {
-    connections.forEach(function(conn) {
-      if (connection != conn) {
-        conn.write(message);
-      }
-    });
-  });
+socket.on('connection', function(con) {
+  connections.push(con);
 });
 
-// on add/change/unlink
+// setup watcher
+var watcher = chokidar.watch(serv, {ignored: /\.swp/});
 watcher.on('all', function(type, path) {
-  connections.forEach(function(conn) {
-    conn.close();
+  connections.forEach(function(connection) {
+    connection.write('refresh');
   });
 });
 
@@ -96,10 +82,6 @@ function serveFile(path, req, res) {
 
   // unify common exts
   switch(ext) {
-    case '.coffee':
-      ext = '.js';
-      break;
-
     case '.markdown':
       ext = '.md';
       break;
@@ -143,53 +125,41 @@ function serveFile(path, req, res) {
     case '.styl':
       readFile(path, res, function(data, mimetype) {
         stylus.render(data, function(err, css) {
-          if (err)
+          if (err) {
             res.send(500);
-          else
+          } else {
             sendData(css, 'text/css', res);
+          }
         });
       });
 
       break;
 
-    // javascript (and coffeescript)
+    // javascript
     case '.js':
       snockets.getConcatenation(path, {
         minify: ugly
       }, function(err, js) {
-        if (err || !js)
+        if (err) {
           res.send(500);
-        else
+        } else {
           sendData(js, 'text/javascript', res);
+        }
       });
 
-      break;
-
-    case '.bmp':
-      res.set('Content-Type', 'image/bmp');
-      res.sendFile(path);
-      break;
-
-    case '.jpg':
-      res.set('Content-Type', 'image/jpg');
-      res.sendFile(path);
-      break;
-
-    case '.gif':
-      res.set('Content-Type', 'image/gif');
-      res.sendFile(path);
-      break;
-
-    case '.png':
-      res.set('Content-Type', 'image/png');
-      res.sendfile(path);
       break;
 
     default:
-      // send whatever we can read
-      readFile(path, res, function(data, mimetype) {
-        sendData(data, mimetype, res);
-      });
+      var mimetype = mime.lookup(path);
+
+      if (mimetype == 'text/html') {
+        readFile(path, res, function(data, mimetype) {
+          sendData(data, mimetype, res);
+        });
+      } else {
+        res.set('Content-Type', mimetype);
+        res.sendfile(path);
+      }
       break;
   }
 }
@@ -269,8 +239,9 @@ function middleware(req, res, next) {
               }
             });
 
-            if (!served)
+            if (! served) {
               res.send(404);
+            }
           }
         }
       });
