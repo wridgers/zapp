@@ -16,7 +16,7 @@
     "url": "http://github.com/wridgers/zapp.git"
   },
 
-  "description": "http server with live reloading, templates, markdown, and scss",
+  "description": "simple development http server with websocket powered live reloading",
   "keywords": [
     "monitor",
     "development",
@@ -44,7 +44,7 @@
     "chokidar": "~1.0.0",
     "sockjs": "~0.3.9",
     "mime": "~1.2.11",
-    "optimist": "~0.6.1",
+    "minimist": "~1.1.1",
 
     "jade": "~1.7.0",
 

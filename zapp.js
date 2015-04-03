@@ -37,20 +37,17 @@ var snockets = new Snockets();
 var markdown = require('markdown').markdown;
 
 // arguments
-var argv = require('optimist')
-  .usage('Usage: $0')
-  .alias('p', 'port')
-  .default('p', 8080)
-  .describe('p', 'Set port to use')
-  .argv;
+var args = require('minimist')(process.argv.slice(2));
+
+console.log(args);
 
 // payloads
 var sockLibPayload = '<script src="/sockjs/lib"></script>';
 var sockSrcPayload = '<script src="/sockjs/src"></script>';
 
 // config
-var port = argv.p;
-var serv = process.cwd();
+var port = args.p || 8080;
+var serv = args._[0] || process.cwd();
 var ugly = false;
 
 var ignores = [
