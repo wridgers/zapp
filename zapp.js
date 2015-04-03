@@ -82,10 +82,6 @@ function serveFile(path, req, res) {
 
   // unify common exts
   switch(ext) {
-    case '.coffee':
-      ext = '.js';
-      break;
-
     case '.markdown':
       ext = '.md';
       break;
@@ -139,7 +135,7 @@ function serveFile(path, req, res) {
 
       break;
 
-    // javascript (and coffeescript)
+    // javascript
     case '.js':
       snockets.getConcatenation(path, {
         minify: ugly
