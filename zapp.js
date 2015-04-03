@@ -13,8 +13,6 @@ var mime     = require('mime');
 var sockjs   = require('sockjs');
 
 // templating and stuff
-var ejs      = require('ejs');
-var hbs      = require('handlebars');
 var jade     = require('jade');
 
 // css
@@ -50,8 +48,6 @@ var index = [
   'index.html',
   'index.htm',
   'index.jade',
-  'index.ejs',
-  'index.hbs',
   'index.md'
 ];
 
@@ -92,25 +88,6 @@ function serveFile(path, req, res) {
 
   // do something based on the extension
   switch (ext) {
-    // eJS
-    case '.ejs':
-      readFile(path, res, function(data, mimetype) {
-        data = ejs.render(data);
-
-        sendData(data, 'text/html', res);
-      });
-      break;
-
-    // handlebars
-    case '.hbs':
-      readFile(path, res, function(data, mimetype) {
-        var template = hbs.compile(data);
-        var html = template();
-
-        sendData(html, 'text/html', res);
-      });
-      break;
-
     // jade
     case '.jade':
       var data = jade.renderFile(path, {
