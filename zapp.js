@@ -14,6 +14,7 @@ var ascii = [
 // node modules
 var http     = require('http');
 var fs       = require('fs');
+var crypto   = require('crypto');
 
 // libs
 var chokidar = require('chokidar');
@@ -272,10 +273,16 @@ server.listen(port);
 var wss = new wsserver({ server: server });
 
 // connection stack
-var connections = [];
+var connections = {};
 
 wss.on('connection', function(ws) {
-  connections.push(ws);
+  var id = crypto.randomBytes(4).toString('hex');
+
+  connections[id] = ws;
+
+  ws.on('close', function(ws) {
+    delete connections[id];
+  });
 });
 
 // setup watcher
@@ -283,11 +290,12 @@ var watcher = chokidar.watch(serv, {ignored: ignores});
 watcher.on('all', function(type, path) {
   var stats = fs.lstatSync(path);
 
-  if (! stats.isDirectory()) {
-    connections.forEach(function(ws) {
+  if (stats.isFile()) {
+    for (var id in connections) {
+      var ws = connections[id];
+
       ws.send('refresh');
-      ws.close();
-    });
+    }
   }
 });
 

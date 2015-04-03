@@ -3,7 +3,7 @@
   var sock = new WebSocket('ws://' + host);
 
   sock.onmessage = function(e) {
-    console.log('recv:' + e.data);
+    location.reload();
   };
 
   sock.onclose = function(e) {
