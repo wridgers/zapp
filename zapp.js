@@ -10,8 +10,6 @@ var ascii = [
   '      \\/     \\/|__|   |__| '
 ].join('\n');
 
-console.log(ascii);
-
 // node modules
 var http     = require('http');
 var fs       = require('fs');
@@ -39,7 +37,23 @@ var markdown = require('markdown').markdown;
 // arguments
 var args = require('minimist')(process.argv.slice(2));
 
-console.log(args);
+if (args.h) {
+  console.log([
+    'Usage: zapp [options] <dir>',
+    '',
+    'Arguments:',
+    '  dir              The directory zapp serves. Defaults to CWD.',
+    '',
+    'Options:',
+    '  -p <port>        Port zapp will serve on',
+    '  -u               Ugly mode, uglifies JS and Jade.',
+    '  -h               Show help'
+  ].join('\n'));
+
+  process.exit(0);
+}
+
+console.log(ascii);
 
 // payloads
 var sockLibPayload = '<script src="/sockjs/lib"></script>';
@@ -48,7 +62,7 @@ var sockSrcPayload = '<script src="/sockjs/src"></script>';
 // config
 var port = args.p || 8080;
 var serv = args._[0] || process.cwd();
-var ugly = false;
+var ugly = args.u || false;
 
 var ignores = [
   '**/*.swp',
