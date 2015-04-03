@@ -7,7 +7,8 @@ var ascii = [
   '\\___   /\\__  \\ \\____ \\\\____ \\',
   ' /    /  / __ \\|  |_> >  |_> >',
   '/_____ \\(____  /   __/|   __/',
-  '      \\/     \\/|__|   |__| '
+  '      \\/     \\/|__|   |__| ',
+  ''
 ].join('\n');
 
 // node modules
@@ -18,7 +19,7 @@ var fs       = require('fs');
 var chokidar = require('chokidar');
 var express  = require('express');
 var mime     = require('mime');
-var sockjs   = require('sockjs');
+var wsserver = require('ws').Server;
 
 // templating and stuff
 var jade     = require('jade');
@@ -53,12 +54,6 @@ if (args.h) {
   process.exit(0);
 }
 
-console.log(ascii);
-
-// payloads
-var sockLibPayload = '<script src="/sockjs/lib"></script>';
-var sockSrcPayload = '<script src="/sockjs/src"></script>';
-
 // config
 var port = args.p || 8080;
 var serv = args._[0] || process.cwd();
@@ -88,34 +83,6 @@ var index = [
   'index.jade',
   'index.md'
 ];
-
-var connections = [];
-
-// setup socket
-var socket = sockjs.createServer();
-socket.on('connection', function(con) {
-  connections.push(con);
-});
-
-// setup watcher
-var watcher = chokidar.watch(serv, {ignored: ignores});
-watcher.on('all', function(type, path) {
-  var stats = fs.lstatSync(path);
-
-  if (! stats.isDirectory()) {
-    connections.forEach(function(connection) {
-      connection.write('refresh');
-      connection.close();
-    });
-  }
-});
-
-// setup server
-var app    = express();
-var server = http.createServer(app);
-
-// bind sockjs
-socket.installHandlers(server, { prefix: '/socket' });
 
 // serve a file or return false
 function serveFile(path, req, res) {
@@ -233,12 +200,12 @@ function sendData(data, mimetype, res) {
   );
 }
 
-// injection sockjs into html
+// inject zapp client into html just before body tag
 function inject(data) {
-  data = data.replace('<\/head>', '  ' + sockLibPayload + '\n  </head>');
-  data = data.replace('<\/body>', '  ' + sockSrcPayload + '\n  </body>');
-
-  return data;
+  return data.replace(
+    '<\/body>',
+    '  <script src="/zapp/client"></script>\n  </body>'
+  );
 }
 
 // serve a resource
@@ -249,17 +216,14 @@ function zappResource(file, res) {
 }
 
 // serve files
-function middleware(req, res, next) {
+function zapp(req, res, next) {
   // get path
   var path = serv + '/' + req.path;
   console.log(req.method + ' ' + req.path);
 
   switch(req.path) {
-    case '/sockjs/lib':
-      zappResource('socklib.js', res);
-      break;
-    case '/sockjs/src':
-      zappResource('socksrc.js', res);
+    case '/zapp/client':
+      zappResource('client.js', res);
       break;
 
     default:
@@ -294,9 +258,38 @@ function middleware(req, res, next) {
 
 }
 
+// setup server
+var app    = express();
+var server = http.createServer(app);
+
 // middleware
-app.use(middleware);
+app.use(zapp);
 
 // start server
 server.listen(port);
-console.log('[zapp] listening on port ' + port);
+
+// web socket server
+var wss = new wsserver({ server: server });
+
+// connection stack
+var connections = [];
+
+wss.on('connection', function(ws) {
+  connections.push(ws);
+});
+
+// setup watcher
+var watcher = chokidar.watch(serv, {ignored: ignores});
+watcher.on('all', function(type, path) {
+  var stats = fs.lstatSync(path);
+
+  if (! stats.isDirectory()) {
+    connections.forEach(function(ws) {
+      ws.send('refresh');
+      ws.close();
+    });
+  }
+});
+
+console.log(ascii);
+console.log('[zapp] serving', serv, 'on port', port);
