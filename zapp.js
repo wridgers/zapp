@@ -43,6 +43,11 @@ var port = argv.p;
 var serv = process.cwd();
 var ugly = false;
 
+var ignores = [
+  '**/*.swp',
+  '**/*.swo'
+];
+
 // index files
 var index = [
   'index.html',
@@ -60,11 +65,16 @@ socket.on('connection', function(con) {
 });
 
 // setup watcher
-var watcher = chokidar.watch(serv, {ignored: /\.swp/});
-watcher.on('all', function(type, path) {
-  connections.forEach(function(connection) {
-    connection.write('refresh');
-  });
+var watcher = chokidar.watch(serv, {ignored: ignores});
+watcher.on('all', function(type, path, stats) {
+  console.log(type, path);
+
+  if (! stats.isDirectory()) {
+    connections.forEach(function(connection) {
+      connection.write('refresh');
+      connection.close();
+    });
+  }
 });
 
 // setup server
@@ -257,4 +267,3 @@ app.use(middleware);
 // start server
 server.listen(port);
 console.log('[zapp] listening on port ' + port);
-
