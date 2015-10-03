@@ -294,7 +294,9 @@ watcher.on('all', function(type, path) {
     for (var id in connections) {
       var ws = connections[id];
 
-      ws.send('refresh');
+      if (ws.readyState == ws.OPEN) {
+        ws.send('refresh');
+      }
     }
   }
 });
