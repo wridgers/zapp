@@ -84,7 +84,15 @@ var index = [
   'index.html',
   'index.htm',
   'index.jade',
-  'index.md'
+  'index.md',
+];
+
+// extensions
+var extensions = [
+  '.html',
+  '.htm',
+  '.jade',
+  '.md',
 ];
 
 // serve a file or return false
@@ -232,14 +240,26 @@ function zapp(req, res, next) {
     default:
       fs.stat(path, function(err, stats) {
         if (err || !stats || stats === undefined) {
-          res.send(404);
-        } else {app.use(express.static(__dirname + '/public'));
+          var served = false;
+
+          extensions.forEach(function(extension) {
+            var newPath = path + extension;
+
+            if (fs.existsSync(newPath) && !served) {
+              serveFile(newPath, req, res);
+              served = true;
+            }
+          });
+
+          if (! served) {
+            res.send(404);
+          }
+        } else {
           if (stats.isFile()) {
             serveFile(path, req, res);
           } else {
             var served = false;
 
-            // a bit messy?
             index.forEach(function(file) {
               var newPath = path + '/' + file;
 
