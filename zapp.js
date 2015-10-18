@@ -15,9 +15,11 @@ var ascii = [
 var http     = require('http');
 var fs       = require('fs');
 var crypto   = require('crypto');
+var path     = require('path');
 
 // libs
 var chokidar = require('chokidar');
+var debounce = require('debounce');
 var express  = require('express');
 var mime     = require('mime');
 var wsserver = require('ws').Server;
@@ -256,7 +258,6 @@ function zapp(req, res, next) {
 
       break;
   }
-
 }
 
 // setup server
@@ -278,17 +279,22 @@ var connections = {};
 wss.on('connection', function(ws) {
   var id = crypto.randomBytes(4).toString('hex');
 
+  console.log('CLIENT CONNECTED - ' + id);
+
   connections[id] = ws;
 
   ws.on('close', function(ws) {
+    console.log('CLIENT DISCONNECTED - ' + id);
     delete connections[id];
   });
 });
 
 // setup watcher
 var watcher = chokidar.watch(serv, {ignored: ignores});
-watcher.on('all', function(type, path) {
+watcher.on('all', debounce(function(type, path) {
   var stats = fs.lstatSync(path);
+
+  console.log('CHANGES DETECTED - notifying clients...');
 
   if (stats.isFile()) {
     for (var id in connections) {
@@ -299,7 +305,7 @@ watcher.on('all', function(type, path) {
       }
     }
   }
-});
+}, 500));
 
 console.log(ascii);
-console.log('[zapp] serving', serv, 'on port', port);
+console.log('[zapp] serving', path.resolve(serv), 'on port', port);

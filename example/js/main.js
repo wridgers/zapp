@@ -1,6 +1,5 @@
 //= require vendor/jquery.js
 
 (function() {
-  $('h1').html('Hello world.');
+  $('#quote').html('Stop exploding, you cowards.');
 })();
-
