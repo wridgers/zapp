@@ -5,8 +5,4 @@
   sock.onmessage = function(e) {
     location.reload();
   };
-
-  sock.onclose = function(e) {
-    location.reload();
-  }
 })();
