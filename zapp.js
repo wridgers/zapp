@@ -2,7 +2,7 @@
 
 "use strict";
 
-var ascii = [
+const ascii = [
   '_____________  ______ ______',
   '\\___   /\\__  \\ \\____ \\\\____ \\',
   ' /    /  / __ \\|  |_> >  |_> >',
@@ -12,34 +12,34 @@ var ascii = [
 ].join('\n');
 
 // node modules
-var http     = require('http');
-var fs       = require('fs');
-var crypto   = require('crypto');
-var path     = require('path');
+const http     = require('http');
+const fs       = require('fs');
+const crypto   = require('crypto');
+const path     = require('path');
 
 // libs
-var chokidar = require('chokidar');
-var debounce = require('debounce');
-var express  = require('express');
-var mime     = require('mime');
-var wsserver = require('ws').Server;
+const chokidar = require('chokidar');
+const debounce = require('debounce');
+const express  = require('express');
+const mime     = require('mime');
+const wsserver = require('ws').Server;
 
 // templating and stuff
-var jade     = require('jade');
+const jade     = require('jade');
 
 // css
-var less     = require('less');
-var stylus   = require('stylus');
+const less     = require('less');
+const stylus   = require('stylus');
 
 // javascript/coffeescript
-var Snockets = require('snockets');
-var snockets = new Snockets();
+const Snockets = require('snockets');
+const snockets = new Snockets();
 
 // misc
-var markdown = require('markdown').markdown;
+const markdown = require('markdown').markdown;
 
 // arguments
-var args = require('minimist')(process.argv.slice(2));
+const args = require('minimist')(process.argv.slice(2));
 
 if (args.h) {
   console.log([
@@ -58,19 +58,19 @@ if (args.h) {
 }
 
 // config
-var port = args.p || 8080;
-var serv = args._[0] || process.cwd();
-var ugly = args.u || false;
+const port = args.p || 8080;
+const serv = args._[0] || process.cwd();
+const ugly = args.u || false;
 
-var ignores = [
+let ignores = [
   '**/*.swp',
   '**/*.swo'
 ];
 
-var zappignore = serv + '/.zappignore';
+const zappignore = serv + '/.zappignore';
 
 if (fs.existsSync(zappignore)) {
-  var contents = fs.readFileSync(zappignore, 'utf8');
+  const contents = fs.readFileSync(zappignore, 'utf8');
 
   ignores = contents
     .split('\n')
@@ -80,7 +80,7 @@ if (fs.existsSync(zappignore)) {
 }
 
 // index files
-var index = [
+const indexes = [
   'index.html',
   'index.htm',
   'index.jade',
@@ -88,7 +88,7 @@ var index = [
 ];
 
 // extensions
-var extensions = [
+const extensions = [
   '.html',
   '.htm',
   '.jade',
@@ -96,10 +96,10 @@ var extensions = [
 ];
 
 // serve a file or return false
-function serveFile(path, req, res) {
+function serveFile(filePath, req, res) {
   // get the extension
-  var index = path.lastIndexOf('.')
-  var ext   = (index < 0) ? '' : path.substr(index).toLowerCase();
+  const index = filePath.lastIndexOf('.')
+  const ext   = (index < 0) ? '' : filePath.substr(index).toLowerCase();
 
   // unify common exts
   switch(ext) {
@@ -112,7 +112,7 @@ function serveFile(path, req, res) {
   switch (ext) {
     // jade
     case '.jade':
-      var data = jade.renderFile(path, {
+      const data = jade.renderFile(filePath, {
         pretty: !ugly
       });
 
@@ -121,7 +121,7 @@ function serveFile(path, req, res) {
 
     // markdown
     case '.md':
-      readFile(path, res, function(data, mimetype) {
+      readFile(filePath, res, function(data, mimetype) {
         data = markdown.toHTML(data);
         data = jade.renderFile(__dirname + '/res/markdown.jade', {rendered: data});
 
@@ -131,7 +131,7 @@ function serveFile(path, req, res) {
 
     // less
     case '.less':
-      readFile(path, res, function(data, mimetype) {
+      readFile(filePath, res, function(data, mimetype) {
         less.render(data, function(err, css) {
           if (err)
             res.send(500);
@@ -144,7 +144,7 @@ function serveFile(path, req, res) {
 
     // stylus
     case '.styl':
-      readFile(path, res, function(data, mimetype) {
+      readFile(filePath, res, function(data, mimetype) {
         stylus.render(data, function(err, css) {
           if (err) {
             res.send(500);
@@ -158,7 +158,7 @@ function serveFile(path, req, res) {
 
     // javascript
     case '.js':
-      snockets.getConcatenation(path, {
+      snockets.getConcatenation(filePath, {
         minify: ugly
       }, function(err, js) {
         if (err) {
@@ -171,15 +171,15 @@ function serveFile(path, req, res) {
       break;
 
     default:
-      var mimetype = mime.lookup(path);
+      const mimetype = mime.lookup(filePath);
 
       if (mimetype == 'text/html') {
-        readFile(path, res, function(data, mimetype) {
+        readFile(filePath, res, function(data, mimetype) {
           sendData(data, mimetype, res);
         });
       } else {
         res.set('Content-Type', mimetype);
-        res.sendfile(path);
+        res.sendFile(filePath);
       }
       break;
   }
@@ -192,7 +192,7 @@ function readFile(path, res, callback) {
       res.send(500);
     } else {
       // get mimetype
-      var mimetype = mime.lookup(path);
+      const mimetype = mime.lookup(path);
 
       // hand back read data
       callback(data, mimetype);
@@ -229,7 +229,7 @@ function zappResource(file, res) {
 // serve files
 function zapp(req, res, next) {
   // get path
-  var path = serv + '/' + req.path;
+  const filePath = path.resolve(serv + '/' + req.path);
   console.log(req.method + ' ' + req.path);
 
   switch(req.path) {
@@ -238,12 +238,12 @@ function zapp(req, res, next) {
       break;
 
     default:
-      fs.stat(path, function(err, stats) {
+      fs.stat(filePath, function(err, stats) {
         if (err || !stats || stats === undefined) {
-          var served = false;
+          let served = false;
 
           extensions.forEach(function(extension) {
-            var newPath = path + extension;
+            const newPath = filePath + extension;
 
             if (fs.existsSync(newPath) && !served) {
               serveFile(newPath, req, res);
@@ -256,12 +256,12 @@ function zapp(req, res, next) {
           }
         } else {
           if (stats.isFile()) {
-            serveFile(path, req, res);
+            serveFile(filePath, req, res);
           } else {
-            var served = false;
+            let served = false;
 
-            index.forEach(function(file) {
-              var newPath = path + '/' + file;
+            indexes.forEach(function(file) {
+              const newPath = filePath + '/' + file;
 
               if (fs.existsSync(newPath) && !served) {
                 serveFile(newPath, req, res);
@@ -281,8 +281,8 @@ function zapp(req, res, next) {
 }
 
 // setup server
-var app    = express();
-var server = http.createServer(app);
+const app    = express();
+const server = http.createServer(app);
 
 // middleware
 app.use(zapp);
@@ -291,13 +291,13 @@ app.use(zapp);
 server.listen(port);
 
 // web socket server
-var wss = new wsserver({ server: server });
+const wss = new wsserver({ server: server });
 
 // connection stack
-var connections = {};
+let connections = {};
 
 wss.on('connection', function(ws) {
-  var id = crypto.randomBytes(4).toString('hex');
+  const id = crypto.randomBytes(4).toString('hex');
 
   console.log('CLIENT CONNECTED - ' + id);
 
@@ -310,15 +310,15 @@ wss.on('connection', function(ws) {
 });
 
 // setup watcher
-var watcher = chokidar.watch(serv, {ignored: ignores});
-watcher.on('all', debounce(function(type, path) {
-  var stats = fs.lstatSync(path);
+const watcher = chokidar.watch(serv, {ignored: ignores});
+watcher.on('all', debounce(function(type, p) {
+  const stats = fs.lstatSync(p);
 
   console.log('CHANGES DETECTED - notifying clients...');
 
   if (stats.isFile()) {
-    for (var id in connections) {
-      var ws = connections[id];
+    for (const id in connections) {
+      const ws = connections[id];
 
       if (ws.readyState == ws.OPEN) {
         ws.send('refresh');
